@@ -175,13 +175,14 @@ def prepare_training_data(train_csv_path: str, vector_db, retrieve_func) -> Tupl
             is_relevant = 1 if len(relevant_slugs & cand_urls) > 0 else 0
             y_labels.append(is_relevant)
     
-    # Convert to DataFrame
-    X_df = pd.DataFrame(X_features)
-    y_df = pd.Series(y_labels)
+    # Return as numpy arrays (pandas not needed)
+    import numpy as np
+    X = np.array(X_features)
+    y = np.array(y_labels)
     
-    print(f"Prepared {len(X_df)} training samples ({sum(y_labels)} positive, {len(y_labels) - sum(y_labels)} negative)")
+    print(f"Prepared {len(X)} training samples ({sum(y_labels)} positive, {len(y_labels) - sum(y_labels)} negative)")
     
-    return X_df, y_df
+    return X, y
 
 
 def train_xgboost_reranker(train_csv_path: str, vector_db, retrieve_func, model_path: str = 'data/xgboost_reranker.pkl'):
