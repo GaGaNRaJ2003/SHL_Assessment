@@ -1,0 +1,15 @@
+# Streamlit configuration for cloud deployment
+# Disable file watcher to avoid inotify limit issues
+
+[server]
+# Use polling instead of inotify to avoid "inotify instance limit reached" error
+fileWatcherType = "poll"
+
+# Disable file watching entirely (alternative option)
+# fileWatcherType = "none"
+
+# Other server settings
+headless = true
+enableCORS = false
+enableXsrfProtection = true
+
