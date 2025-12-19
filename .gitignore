@@ -1,0 +1,67 @@
+# Environment variables
+.env
+.env.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+dist/
+*.egg-info/
+
+# Generated model/index files (can be regenerated)
+data/*.pkl
+data/*.bin
+data/crawler_progress.json
+data/assessments.json.backup
+
+# Keep assessments.json (needed for embeddings)
+!data/assessments.json
+
+# Backup folders
+backup/
+
+# Temporary/Test scripts
+sh.py
+check_csv.py
+check_consultant_assessments.py
+debug_retrieval.py
+find_missing*.py
+test_improvements.py
+test_llm_rerank.py
+test_query.py
+
+# Duplicate dataset files
+Gen_AI Dataset*.csv
+Gen_AI Dataset*.xlsx
+
+# Assignment PDF
+*.pdf
+!submission/*.pdf
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Note: submission/predictions.csv should be committed (required for submission)
+
