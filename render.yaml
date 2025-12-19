@@ -2,8 +2,7 @@ services:
   - type: web
     name: shl-assessment-api
     env: python
-    pythonVersion: "3.12"  # Add this line
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
     startCommand: uvicorn src.api:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: GEMINI_API_KEY
