@@ -15,14 +15,18 @@ build/
 dist/
 *.egg-info/
 
-# Generated model/index files (can be regenerated)
-data/*.pkl
-data/*.bin
+# Generated model/index files - NOW INCLUDED FOR DEPLOYMENT
+# Commented out so these files are committed for instant API startup
+# data/*.pkl
+# data/*.bin
 data/crawler_progress.json
 data/assessments.json.backup
 
-# Keep assessments.json (needed for embeddings)
+# Keep all essential files for deployment
 !data/assessments.json
+!data/faiss_index.bin
+!data/faiss_metadata.pkl
+!data/xgboost_reranker.pkl
 
 # Backup folders
 backup/

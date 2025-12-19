@@ -36,79 +36,40 @@ class RecommendationResponse(BaseModel):
 
 
 def ensure_initialized():
-    """Ensure vector DB and XGBoost model are initialized."""
+    """Verify required files exist (pre-generated for instant startup)."""
     global _initialized
     
     if _initialized:
         return
     
-    # Check if vector DB exists
+    # Check if vector DB exists (should be pre-generated)
     index_file = 'data/faiss_index.bin'
     metadata_file = 'data/faiss_metadata.pkl'
-    assessments_file = 'data/assessments.json'
     
     if not os.path.exists(index_file) or not os.path.exists(metadata_file):
-        print("Vector DB not found. Initializing...")
-        
-        # Check if assessments.json exists
-        if not os.path.exists(assessments_file):
-            raise FileNotFoundError(
-                f"Assessments file not found: {assessments_file}. "
-                "Please ensure assessments.json exists in the data/ directory."
-            )
-        
-        # Load assessments and initialize vector DB
-        from src.embeddings import initialize_vector_db
-        
-        with open(assessments_file, 'r', encoding='utf-8') as f:
-            assessments = json.load(f)
-        
-        print(f"Loading {len(assessments)} assessments...")
-        db = initialize_vector_db(assessments, force_rebuild=False)
-        
-        if not db:
-            raise RuntimeError("Failed to initialize vector database")
-        
-        print("Vector DB initialized successfully!")
+        raise FileNotFoundError(
+            f"Vector database files not found: {index_file}, {metadata_file}. "
+            "Please ensure these files are committed to the repository. "
+            "Run 'python src/embeddings.py' locally to generate them."
+        )
     
-    # Check if XGBoost model exists
+    # XGBoost model is optional (will use fallback if not found)
     model_file = 'data/xgboost_reranker.pkl'
-    train_file = 'data/train.csv'
-    
     if not os.path.exists(model_file):
-        print("XGBoost model not found. Training...")
-        
-        if not os.path.exists(train_file):
-            print(f"Warning: {train_file} not found. XGBoost re-ranking will use fallback.")
-        else:
-            try:
-                from src.xgboost_reranker import train_xgboost_reranker
-                from src.advanced_retriever import retrieve_advanced as retrieve_func
-                
-                # Get vector DB for training
-                vector_db = get_vector_db()
-                
-                print("Training XGBoost model...")
-                model = train_xgboost_reranker(train_file, vector_db, retrieve_func, model_file)
-                
-                if model:
-                    print("XGBoost model trained successfully!")
-                else:
-                    print("Warning: XGBoost training failed. Will use rule-based fallback.")
-            except Exception as e:
-                print(f"Warning: XGBoost training failed: {e}. Will use rule-based fallback.")
+        print("Warning: XGBoost model not found. Will use rule-based fallback.")
     
     _initialized = True
 
 
 @app.on_event("startup")
 async def startup_event():
-    """Initialize on startup."""
+    """Verify initialization on startup."""
     try:
         ensure_initialized()
+        print("✓ API initialized successfully (using pre-generated files)")
     except Exception as e:
-        print(f"Warning: Initialization on startup failed: {e}")
-        print("Will attempt lazy initialization on first request.")
+        print(f"❌ Initialization failed: {e}")
+        raise
 
 
 @app.get("/health")
