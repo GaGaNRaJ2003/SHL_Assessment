@@ -8,7 +8,7 @@ faiss-cpu==1.13.1
 google-generativeai==0.3.1
 python-dotenv==1.0.0
 pydantic>=2.8.0
-pandas>=2.2.0
+# pandas removed - not needed for API (only for training, which is pre-done)
 numpy>=1.26.0
 tqdm==4.66.1
 xgboost>=2.0.0

@@ -216,8 +216,11 @@ def train_xgboost_reranker(train_csv_path: str, vector_db, retrieve_func, model_
         eval_metric='logloss'
     )
     
-    # Train model
-    model.fit(X.values, y.values)
+    # Train model (handle both pandas and numpy)
+    if hasattr(X, 'values'):
+        model.fit(X.values, y.values if hasattr(y, 'values') else y)
+    else:
+        model.fit(X, y)
     
     # Save model using pickle
     import pickle
