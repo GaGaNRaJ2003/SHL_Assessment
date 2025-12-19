@@ -6,7 +6,11 @@ import os
 import json
 import csv
 import numpy as np
-import pandas as pd
+try:
+    import pandas as pd
+    PANDAS_AVAILABLE = True
+except ImportError:
+    PANDAS_AVAILABLE = False
 from typing import List, Dict, Tuple
 from collections import defaultdict
 import re
@@ -265,11 +269,12 @@ def rerank_with_xgboost(
         features = extract_features(query, cand, query_info)
         features_list.append(features)
     
-    # Convert to DataFrame
-    X = pd.DataFrame(features_list)
+    # Convert to numpy array (no pandas needed)
+    import numpy as np
+    X = np.array(features_list)
     
     # Get probability scores (higher = more likely to be relevant)
-    scores = model.predict_proba(X.values)[:, 1]  # Probability of positive class
+    scores = model.predict_proba(X)[:, 1]  # Probability of positive class
     
     # Add scores to candidates and sort
     for i, cand in enumerate(candidates):
