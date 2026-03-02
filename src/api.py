@@ -122,8 +122,8 @@ async def recommend_assessments(request: QueryRequest):
             query=query,
             vector_db=vector_db,
             top_k=10,
-            use_llm_rerank=False,  # XGBoost is better and has no API limits
-            use_xgboost_rerank=True  # Enable XGBoost re-ranking for best results (61.56% recall)
+            use_llm_rerank=False,
+            use_xgboost_rerank=True,
         )
         
         if not ranked:
