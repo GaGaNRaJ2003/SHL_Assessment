@@ -32,7 +32,7 @@ def get_query_embedding(query: str) -> List[float]:
             raise RuntimeError("GEMINI_API_KEY not set; using fallback embedding.")
 
         result = genai.embed_content(
-            model="text-embedding-004",
+            model="models/gemini-embedding-001",
             content=query,
             task_type="retrieval_query"
         )

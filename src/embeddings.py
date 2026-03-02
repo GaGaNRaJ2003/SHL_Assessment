@@ -26,7 +26,7 @@ def get_embedding(text: str, task_type: str = "retrieval_document") -> List[floa
     """Get embedding for text using Gemini."""
     try:
         result = genai.embed_content(
-            model="text-embedding-004",
+            model="models/gemini-embedding-001",
             content=text,
             task_type=task_type
         )
