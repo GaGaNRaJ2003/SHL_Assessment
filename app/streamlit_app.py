@@ -119,7 +119,25 @@ if submit_button or query:
             except requests.exceptions.Timeout:
                 st.error("Request timed out. The API may be processing a large query.")
             except requests.exceptions.HTTPError as e:
-                st.error(f"API Error: {e}")
+                # Try to surface useful error details from the API
+                detail_message = None
+                try:
+                    error_body = e.response.json()
+                    if isinstance(error_body, dict):
+                        detail_message = error_body.get("detail")
+                except Exception:
+                    detail_message = None
+
+                if detail_message:
+                    st.error(f"API Error {e.response.status_code}: {detail_message}")
+                else:
+                    st.error(f"API Error: {e}")
+
+                if e.response.status_code == 400:
+                    st.info(
+                        "Tip: Enter a job description or a job posting URL, "
+                        "not the API URL itself."
+                    )
                 if e.response.status_code == 500:
                     st.info("The API may need the vector database initialized. Run: python src/embeddings.py")
             except Exception as e:
