@@ -12,23 +12,37 @@ api_key = os.getenv('GEMINI_API_KEY')
 if api_key:
     genai.configure(api_key=api_key)
 
+# Dimension used when generating embeddings in src/embeddings.py
+FALLBACK_EMBEDDING_DIM = 768
+
 # FAISS index and metadata storage
 INDEX_FILE = 'data/faiss_index.bin'
 METADATA_FILE = 'data/faiss_metadata.pkl'
 
 
 def get_query_embedding(query: str) -> List[float]:
-    """Get embedding for query using Gemini."""
+    """Get embedding for query using Gemini.
+
+    If embedding fails (e.g. model not available, key missing, quota issues),
+    return a zero-vector fallback so retrieval can still proceed using keyword
+    boosts and metadata scores instead of failing with no results.
+    """
     try:
+        if not api_key:
+            raise RuntimeError("GEMINI_API_KEY not set; using fallback embedding.")
+
         result = genai.embed_content(
             model="models/text-embedding-004",
             content=query,
             task_type="retrieval_query"
         )
-        return result['embedding']
+        embedding = result.get('embedding') if isinstance(result, dict) else None
+        if embedding and len(embedding) > 0:
+            return embedding
+        raise RuntimeError("Empty embedding returned from Gemini; using fallback.")
     except Exception as e:
-        print(f"Error getting query embedding: {e}")
-        return None
+        print(f"Error getting query embedding: {e}. Using zero-vector fallback.")
+        return [0.0] * FALLBACK_EMBEDDING_DIM
 
 
 def get_vector_db():
