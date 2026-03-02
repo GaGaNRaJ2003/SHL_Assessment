@@ -12,10 +12,9 @@ api_key = os.getenv('GEMINI_API_KEY')
 if api_key:
     genai.configure(api_key=api_key)
 
-# Dimension used when generating embeddings in src/embeddings.py
-FALLBACK_EMBEDDING_DIM = 768
+EMBEDDING_MODEL = "models/gemini-embedding-001"
+EMBEDDING_DIM = 768
 
-# FAISS index and metadata storage
 INDEX_FILE = 'data/faiss_index.bin'
 METADATA_FILE = 'data/faiss_metadata.pkl'
 
@@ -23,26 +22,26 @@ METADATA_FILE = 'data/faiss_metadata.pkl'
 def get_query_embedding(query: str) -> List[float]:
     """Get embedding for query using Gemini.
 
-    If embedding fails (e.g. model not available, key missing, quota issues),
-    return a zero-vector fallback so retrieval can still proceed using keyword
-    boosts and metadata scores instead of failing with no results.
+    Returns a zero-vector fallback when Gemini is unavailable so retrieval
+    can still proceed via keyword boosts.
     """
     try:
         if not api_key:
-            raise RuntimeError("GEMINI_API_KEY not set; using fallback embedding.")
+            raise RuntimeError("GEMINI_API_KEY not set")
 
         result = genai.embed_content(
-            model="models/gemini-embedding-001",
+            model=EMBEDDING_MODEL,
             content=query,
-            task_type="retrieval_query"
+            task_type="retrieval_query",
+            output_dimensionality=EMBEDDING_DIM,
         )
         embedding = result.get('embedding') if isinstance(result, dict) else None
         if embedding and len(embedding) > 0:
             return embedding
-        raise RuntimeError("Empty embedding returned from Gemini; using fallback.")
+        raise RuntimeError("Empty embedding returned from Gemini")
     except Exception as e:
         print(f"Error getting query embedding: {e}. Using zero-vector fallback.")
-        return [0.0] * FALLBACK_EMBEDDING_DIM
+        return [0.0] * EMBEDDING_DIM
 
 
 def get_vector_db():
@@ -52,24 +51,23 @@ def get_vector_db():
             f"Vector database not found. Please run embeddings.py first. "
             f"Looking for: {INDEX_FILE} and {METADATA_FILE}"
         )
-    
+
     index = faiss.read_index(INDEX_FILE)
     with open(METADATA_FILE, 'rb') as f:
         metadata = pickle.load(f)
-    
+
     return {'index': index, 'metadata': metadata}
 
 
 def extract_keywords(query: str) -> List[str]:
     """Extract important keywords from query for boosting."""
-    # Common technical terms that should boost relevance
     tech_keywords = [
         'java', 'python', 'javascript', 'sql', 'excel', 'data', 'analyst',
         'developer', 'engineer', 'sales', 'manager', 'admin', 'leadership',
         'verbal', 'numerical', 'cognitive', 'personality', 'seo', 'marketing',
         'communication', 'english', 'programming', 'coding', 'software'
     ]
-    
+
     query_lower = query.lower()
     found = []
     for kw in tech_keywords:
@@ -85,49 +83,41 @@ def retrieve_candidates(
     max_duration: Optional[int] = None
 ) -> List[Dict]:
     """Retrieve candidate assessments using vector search with keyword boost."""
-    # Get query embedding
     query_embedding = get_query_embedding(query)
     if not query_embedding:
         return []
-    
+
     index = vector_db['index']
     metadata = vector_db['metadata']
-    
-    # Normalize query embedding for cosine similarity
+
     query_vec = np.array([query_embedding], dtype='float32')
     faiss.normalize_L2(query_vec)
-    
-    # Search more candidates for re-ranking
+
     search_k = min(top_k * 3, index.ntotal)
     distances, indices = index.search(query_vec, search_k)
-    
-    # Extract keywords from query for boosting
+
     keywords = extract_keywords(query)
-    
-    # Format results with keyword boost
+
     candidates = []
     for i, idx in enumerate(indices[0]):
         if idx < len(metadata):
             meta = metadata[idx]
-            
-            # Apply duration filter if specified
+
             if max_duration and meta.get('duration', 0) > max_duration:
                 continue
-            
-            # Calculate keyword boost
+
             name_lower = meta['name'].lower()
             desc_lower = (meta.get('description', '') or '').lower()
-            
+
             keyword_boost = 0.0
             for kw in keywords:
                 if kw in name_lower:
-                    keyword_boost += 0.15  # Boost for name match
+                    keyword_boost += 0.15
                 elif kw in desc_lower:
-                    keyword_boost += 0.05  # Smaller boost for description match
-            
-            # Combined score (similarity + keyword boost)
+                    keyword_boost += 0.05
+
             combined_score = float(distances[0][i]) + keyword_boost
-            
+
             candidates.append({
                 'url': meta['url'],
                 'alternate_urls': meta.get('alternate_urls', []),
@@ -139,8 +129,7 @@ def retrieve_candidates(
                 'test_type': meta.get('test_type', []) if isinstance(meta.get('test_type'), list) else [],
                 'distance': combined_score
             })
-    
-    # Re-sort by combined score (higher is better)
+
     candidates.sort(key=lambda x: x['distance'], reverse=True)
-    
+
     return candidates[:top_k]

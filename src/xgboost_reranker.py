@@ -128,7 +128,7 @@ def extract_features(query: str, candidate: Dict, query_info: Dict = None) -> Di
     return features
 
 
-def prepare_training_data(train_csv_path: str, vector_db, retrieve_func) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def prepare_training_data(train_csv_path: str, vector_db, retrieve_func) -> Tuple:
     """
     Prepare training data from train set.
     For each query-candidate pair, extract features and label (1 if relevant, 0 if not).
@@ -175,9 +175,11 @@ def prepare_training_data(train_csv_path: str, vector_db, retrieve_func) -> Tupl
             is_relevant = 1 if len(relevant_slugs & cand_urls) > 0 else 0
             y_labels.append(is_relevant)
     
-    # Return as numpy arrays (pandas not needed)
     import numpy as np
-    X = np.array(X_features)
+    if not X_features:
+        return np.array([]), np.array([])
+    feature_names = sorted(X_features[0].keys())
+    X = np.array([[f[k] for k in feature_names] for f in X_features])
     y = np.array(y_labels)
     
     print(f"Prepared {len(X)} training samples ({sum(y_labels)} positive, {len(y_labels) - sum(y_labels)} negative)")
@@ -273,9 +275,9 @@ def rerank_with_xgboost(
         features = extract_features(query, cand, query_info)
         features_list.append(features)
     
-    # Convert to numpy array (no pandas needed)
     import numpy as np
-    X = np.array(features_list)
+    feature_names = sorted(features_list[0].keys())
+    X = np.array([[f[k] for k in feature_names] for f in features_list])
     
     # Get probability scores (higher = more likely to be relevant)
     scores = model.predict_proba(X)[:, 1]  # Probability of positive class

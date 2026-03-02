@@ -1,15 +1,14 @@
 # Minimal requirements for API deployment
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
-requests==2.31.0
-beautifulsoup4==4.12.2
-lxml==4.9.3
-faiss-cpu==1.13.1
-google-generativeai==0.3.1
-python-dotenv==1.0.0
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+lxml>=5.0.0
+faiss-cpu>=1.7.0
+google-generativeai>=0.8.0
+python-dotenv>=1.0.0
 pydantic>=2.8.0
-# pandas removed - not needed for API (only for training, which is pre-done)
 numpy>=1.26.0
-tqdm==4.66.1
+tqdm>=4.66.0
 xgboost>=2.0.0
-
+scikit-learn>=1.3.0

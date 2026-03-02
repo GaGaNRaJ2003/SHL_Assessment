@@ -66,9 +66,9 @@ async def startup_event():
     """Verify initialization on startup."""
     try:
         ensure_initialized()
-        print("✓ API initialized successfully (using pre-generated files)")
+        print("[OK] API initialized successfully (using pre-generated files)")
     except Exception as e:
-        print(f"❌ Initialization failed: {e}")
+        print(f"[FAIL] Initialization failed: {e}")
         raise
 
 
