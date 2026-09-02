@@ -211,28 +211,48 @@ This creates `submission/predictions.csv` in the required format.
 ## Project Structure
 
 ```
-shl-assessment-recommender/
-├── data/
-│   ├── assessments.json          # Crawled catalog (generated)
-│   ├── chroma_db/                 # Vector database (generated)
+SHL_Assessment/
+├── data/                          # Runtime artifacts (load-bearing, pre-generated)
+│   ├── assessments.json           # Crawled SHL catalog (389 assessments)
+│   ├── faiss_index.bin            # FAISS vector index
+│   ├── faiss_metadata.pkl         # Index metadata
+│   ├── xgboost_reranker.pkl       # Trained re-ranker
 │   ├── train.csv                  # Labeled train set
 │   └── test.csv                   # Unlabeled test set
-├── src/
-│   ├── crawler.py                 # Web scraper
-│   ├── embeddings.py              # Embedding generation
+├── src/                           # Production code
+│   ├── api.py                     # FastAPI backend (/health, /recommend)
+│   ├── crawler.py                 # Catalog scraper
+│   ├── crawler_master.py          # Multi-strategy crawler (built the 389-item catalog)
+│   ├── embeddings.py              # Gemini embeddings → FAISS
 │   ├── retriever.py               # Vector search
-│   ├── reranker.py                # LLM re-ranking
-│   ├── api.py                     # FastAPI backend
-│   └── utils.py                   # Helper functions
+│   ├── advanced_retriever.py      # Query preprocessing + boosting (live path)
+│   ├── xgboost_reranker.py        # XGBoost re-ranking (best: 61.56% Recall@10)
+│   ├── llm_reranker.py            # Gemini LLM re-ranking
+│   ├── url_utils.py               # URL normalisation / variants
+│   └── utils.py                   # JD fetching, query cleaning
 ├── app/
-│   └── streamlit_app.py           # Web frontend
+│   └── streamlit_app.py           # Streamlit frontend (calls the API over HTTP)
 ├── notebooks/
-│   └── evaluation.ipynb           # Evaluation scripts
+│   ├── evaluate.py                # Recall@10 on train set
+│   └── generate_predictions.py    # Builds submission/predictions.csv
+├── experiments/                   # Archived research: evaluation runs, crawler variants
+│   └── crawlers/
+├── docs/                          # Optimisation journey, recall reports, checklists
 ├── submission/
-│   └── predictions.csv            # Final predictions (generated)
-├── requirements.txt
-├── .env                           # Environment variables (create from .env.example)
+│   ├── predictions.csv            # Final predictions
+│   └── approach_documentation.tex # Write-up
+├── Dockerfile / Procfile / render.yaml / runtime.txt   # Render deployment
+├── requirements.txt               # Full deps (Streamlit Cloud)
+├── requirements-api.txt           # Slim deps (API container)
 └── README.md
+```
+
+### Running archived experiments
+
+They import `src.*`, so run them as modules from the repo root:
+
+```bash
+python -m experiments.evaluate_xgboost
 ```
 
 ## Key Features
